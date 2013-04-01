@@ -1,0 +1,8 @@
+# PIP Requirements (for automated testing with tox)
+django-debug-toolbar
+django-devserver
+django-extensions
+django-hotrunner>=0.2.1
+django-jsonfield
+django-setuptest
+South
