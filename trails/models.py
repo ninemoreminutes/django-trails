@@ -6,11 +6,15 @@ from django.utils.translation import ugettext_lazy as _
 # Django-JSONField
 from jsonfield import JSONField
 
+# Django-Trails
+from trails.managers import TrailManager
+
 __all__ = ['Trail']
 
-class Trail(models.Model): 
+
+class Trail(models.Model):
     """Audit trail of changes to models."""
-    
+
     #ACTION_CHOICES = [
     #    ('add', _('Add')),
     #    ('change', _('Change')),
@@ -18,9 +22,7 @@ class Trail(models.Model):
     #    ('read', _('Read')),
     #]
 
-    class Meta:
-        ordering = ['-created']
-        verbose_name = _('audit trail')
+    objects = TrailManager()
 
     created = models.DateTimeField(
         auto_now_add=True,
@@ -30,25 +32,45 @@ class Trail(models.Model):
         related_name='trails',
         editable=False,
         null=True,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
     )
-    user_unicode = models.CharField(
-        max_length=200,
+    user_unicode = models.TextField(
     )
     content_type = models.ForeignKey(
         'contenttypes.ContentType',
         related_name='trails',
+        editable=False,
+        null=True,
+        on_delete=models.SET_NULL,
     )
-    object_id = models.PositiveIntegerField()
-    content_object = generic.GenericForeignKey('content_type', 'object_id')
-    content_unicode = models.CharField(max_length=200)
-    action = models.CharField(max_length=100, db_index=True)
-    changes = JSONField(blank=True, default='')
+    object_id = models.PositiveIntegerField(
+    )
+    content_object = generic.GenericForeignKey(
+        'content_type',
+        'object_id',
+    )
+    content_unicode = models.TextField(
+    )
+    action = models.CharField(
+        max_length=100,
+        db_index=True,
+    )
+    changes = JSONField(
+        blank=True,
+        default='',
+    )
+
+    class Meta:
+        ordering = ['-created']
+        verbose_name = _('audit trail')
+
+    def __unicode__(self):
+        return unicode(self.created)
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.content_unicode:
             self.content_unicode = unicode(self.content_object)
-        if not self.pk: # Never save after initial creation.
+        if not self.pk:  # Never save after initial creation.
             super(Trail, self).save(*args, **kwargs)
 
 import signals

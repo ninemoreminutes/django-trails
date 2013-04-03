@@ -30,6 +30,10 @@ SITE_ID = 1
 
 SECRET_KEY = 'f10c5c85b733a89bee056be9baaa3bd55ac569c8'
 
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
+
 STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'public', 'static')
