@@ -2,14 +2,17 @@
 from django.conf import settings
 from django.conf.urls.defaults import patterns, include, url
 
-urlpatterns = patterns('')
+urlpatterns = patterns('',
+    url(r'^test_app/', include('test_app.urls', namespace='test_app',
+                               app_name='test_app')),
+)
 
 if 'django.contrib.admin' in settings.INSTALLED_APPS:
     from django.contrib import admin
     admin.autodiscover()
-    urlpatterns += patterns('django.views.generic.simple',
+    #urlpatterns += patterns('django.views.generic.simple',
         #url(r'^$', 'redirect_to', {'url': '/admin/'}),
-    )
+    #)
     urlpatterns += patterns('',
         url(r'', include(admin.site.urls)),
     )

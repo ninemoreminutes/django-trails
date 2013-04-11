@@ -70,7 +70,7 @@ class ModelState(threading.local):
 
     def m2m_changed_callback(self, sender, **kwargs):
         # FIXME: Not currently tracking M2M changes!!!
-        print 'm2m_changed', sender, kwargs
+        #print 'm2m_changed', sender, kwargs
         action = kwargs['action']
         instance = kwargs['instance']
         other_model = kwargs['model']
@@ -80,7 +80,7 @@ class ModelState(threading.local):
             #name = field.m2m_reverse_name()
             #old = [ str(getattr(x, name)) for x in sender.objects.all() ]
             #print old
-            print sender.objects.all()
+            #print sender.objects.all()
             # we know the new will exclude this, so its just all without this
             #ex = {"%s__in" % field.m2m_reverse_field_name():kwargs["pk_set"]}
             #new = [ str(getattr(x, name)) for x in sender.objects.exclude(**ex)]

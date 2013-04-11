@@ -19,7 +19,7 @@ setup(
     license='BSD',
     keywords='django audit trail logging',
     url='https://projects.ninemoreminutes.com/projects/django-trails/',
-    packages=find_packages(exclude=['test_project']),
+    packages=find_packages(exclude=['test_project', 'test_app']),
     include_package_data=True,
     zip_safe=False,
     install_requires=[

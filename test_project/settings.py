@@ -67,6 +67,7 @@ INSTALLED_APPS = (
     'django_extensions',
     'south',
     'trails',
+    'test_app',
 )
 
 INTERNAL_IPS = ('127.0.0.1',)
@@ -80,7 +81,7 @@ DEVSERVER_DEFAULT_PORT = '8055'
 
 TEST_RUNNER = 'hotrunner.HotRunner'
 
-EXCLUDED_TEST_APPS = [x for x in INSTALLED_APPS if x != 'trails']
+EXCLUDED_TEST_APPS = [x for x in INSTALLED_APPS if x != 'test_app']
 
 # Fix for OverflowError when testing using Python 2.5 and Django 1.4.
 PASSWORD_HASHERS = (

@@ -31,6 +31,7 @@ def serialize_instance(instance, before=False, related=False):
     serialized = serializers.serialize('python', [instance])[0]
     #print serialized
     d = serialized['fields']
+    d['pk'] = serialized['pk']
     if related:
         related_objects = []
         related_objects.extend(model_class._meta.get_all_related_objects())
@@ -43,12 +44,10 @@ def serialize_instance(instance, before=False, related=False):
         parent_obj = parent_class.objects.get(pk=instance.pk)
         d = dict(d.items() + serialize_instance(parent_obj).items())
     for field in instance._meta.many_to_many:
-        values = []
-        for value in getattr(instance, field.name).all():
-            values.append(value.pk)
+        m2m_pks = getattr(instance, field.name).values_list('pk', flat=True)
         #print field.name, values
-        d = dict(d.items() + {field.name: values}.items())
-    #print 'NEW DICT...', d
+        #d[field.name] = m2m_pks
+    print 'NEW DICT...', d
     return d
 
 
@@ -56,7 +55,7 @@ def log_action(action, instance, changes=None, user=None):
     """Record an action taken against a model instance."""
     user = user or get_current_user()
     #logger.debug('%s on %r by %r (%r)', action, instance, user, changes)
-    print '%s %r by %r (%r)' % (action, instance, user, changes)
+    #print '%s %r by %r (%r)' % (action, instance, user, changes)
     
     if not user:
         return # Skip logging anything not done by a user account.

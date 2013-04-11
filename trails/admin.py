@@ -15,16 +15,18 @@ class TrailAdmin(admin.ModelAdmin):
                     'content_unicode')
     list_filter = ('user', 'action', 'content_type')
     fields = ('created', 'user', 'action', 'content_type', 'object_id',
-              'content_unicode', 'get_changes_display')
+              'content_unicode', 'get_data_display')
     readonly_fields = ('created', 'user', 'action', 'content_type',
-                       'object_id', 'content_unicode', 'get_changes_display')
+                       'object_id', 'content_unicode', 'get_data_display')
 
     def has_add_permission(self, request):
         return False
 
-    def get_changes_display(self, obj):
-        return '<pre style="display: inline-block; margin: 0; padding: 0; font-size: 0.9em;">%s</pre>' % json.dumps(obj.changes, indent=4)
-    get_changes_display.short_description = 'Changes'
-    get_changes_display.allow_tags = True
+    def get_data_display(self, obj):
+        json_data = json.dumps(obj.data, indent=4)
+        return '<pre style="display: inline-block; margin: 0; padding: 0; ' + \
+               'font-size: 0.9em;">%s</pre>' % json_data
+    get_data_display.short_description = 'Data'
+    get_data_display.allow_tags = True
 
 admin.site.register(Trail, TrailAdmin)

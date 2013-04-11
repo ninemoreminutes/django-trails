@@ -55,7 +55,7 @@ class Trail(models.Model):
         max_length=100,
         db_index=True,
     )
-    changes = JSONField(
+    data = JSONField(
         blank=True,
         default='',
     )
