@@ -51,11 +51,11 @@ def serialize_instance(instance, before=False, related=False):
     return d
 
 
-def log_action(action, instance, changes=None, user=None):
+def log_action(action, instance, data=None, user=None):
     """Record an action taken against a model instance."""
     user = user or get_current_user()
-    #logger.debug('%s on %r by %r (%r)', action, instance, user, changes)
-    #print '%s %r by %r (%r)' % (action, instance, user, changes)
+    #logger.debug('%s on %r by %r (%r)', action, instance, user, data)
+    #print '%s %r by %r (%r)' % (action, instance, user, data)
     
     if not user:
         return # Skip logging anything not done by a user account.
@@ -63,9 +63,9 @@ def log_action(action, instance, changes=None, user=None):
     if not instance or isinstance(instance, Trail):
         return
     # FIXME: model_to_dict isn't JSON serializable if there's a file field.
-    #if action == 'add' and changes is None:
-    #    changes = model_to_dict(instance)
-    # FIXME: Store changes on delete?
+    #if action == 'add' and data is None:
+    #    data = model_to_dict(instance)
+    # FIXME: Store data on delete?
     user_unicode = unicode(user)
     if not getattr(user, 'pk', 0):
         user = None
@@ -83,6 +83,6 @@ def log_action(action, instance, changes=None, user=None):
         'content_type': content_type,
         'object_id': object_id,
         'action': action,
-        'changes': changes or {},
+        'data': data or {},
     }
     return Trail.objects.create(**kwargs)
