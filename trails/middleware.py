@@ -38,3 +38,6 @@ class RequestUserMiddleware(object):
     def process_response(self, request, response):
         set_current_user(None)
         return response
+
+    def process_exception(self, request, exception):
+        set_current_user(None)

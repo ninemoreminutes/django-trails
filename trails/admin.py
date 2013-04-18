@@ -3,9 +3,10 @@ import json
 
 # Django
 from django.contrib import admin
+from django.utils.translation import ugettext_lazy as _
 
 # Django-Trails
-from trails.models import *
+from trails.models import Trail
 
 
 class TrailAdmin(admin.ModelAdmin):
@@ -16,8 +17,7 @@ class TrailAdmin(admin.ModelAdmin):
     list_filter = ('user', 'action', 'content_type')
     fields = ('created', 'get_user_display', 'action', 'content_type',
               'object_id', 'content_unicode', 'get_data_display')
-    readonly_fields = ('created', 'get_user_display', 'action', 'content_type',
-                       'object_id', 'content_unicode', 'get_data_display')
+    readonly_fields = fields
 
     def has_add_permission(self, request):
         return False
@@ -27,13 +27,13 @@ class TrailAdmin(admin.ModelAdmin):
             return unicode(obj.user)
         else:
             return obj.user_unicode
-    get_user_display.short_description = 'User'
+    get_user_display.short_description = _('User')
 
     def get_data_display(self, obj):
         json_data = json.dumps(obj.data, indent=4)
         return '<pre style="display: inline-block; margin: 0; padding: 0; ' + \
                'font-size: 0.9em;">%s</pre>' % json_data
-    get_data_display.short_description = 'Data'
+    get_data_display.short_description = _('Data')
     get_data_display.allow_tags = True
 
 admin.site.register(Trail, TrailAdmin)

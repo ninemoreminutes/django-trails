@@ -15,13 +15,6 @@ __all__ = ['Trail']
 class Trail(models.Model):
     """Audit trail of changes to models."""
 
-    #ACTION_CHOICES = [
-    #    ('add', _('Add')),
-    #    ('change', _('Change')),
-    #    ('delete', _('Delete')),
-    #    ('read', _('Read')),
-    #]
-
     objects = TrailManager()
 
     created = models.DateTimeField(
@@ -30,34 +23,39 @@ class Trail(models.Model):
     user = models.ForeignKey(
         'auth.User',
         related_name='trails',
-        editable=False,
         null=True,
         on_delete=models.SET_NULL,
+        editable=False,
     )
     user_unicode = models.TextField(
+        editable=False,
     )
     content_type = models.ForeignKey(
         'contenttypes.ContentType',
         related_name='trails',
-        editable=False,
         null=True,
         on_delete=models.SET_NULL,
+        editable=False,
     )
     object_id = models.PositiveIntegerField(
+        editable=False,
     )
     content_object = generic.GenericForeignKey(
         'content_type',
         'object_id',
     )
     content_unicode = models.TextField(
+        editable=False
     )
     action = models.CharField(
         max_length=100,
         db_index=True,
+        editable=False,
     )
     data = JSONField(
         blank=True,
         default='',
+        editable=False,
     )
 
     class Meta:
@@ -73,4 +71,6 @@ class Trail(models.Model):
         if not self.pk:  # Never save after initial creation.
             super(Trail, self).save(*args, **kwargs)
 
-import signals
+
+import trails.signals
+import trails.modelstate

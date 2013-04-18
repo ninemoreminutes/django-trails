@@ -26,6 +26,8 @@ DATABASES = {
 
 TIME_ZONE = 'America/New_York'
 
+USE_TZ = True
+
 SITE_ID = 1
 
 SECRET_KEY = 'f10c5c85b733a89bee056be9baaa3bd55ac569c8'

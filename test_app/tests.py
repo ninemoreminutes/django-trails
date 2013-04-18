@@ -45,6 +45,13 @@ class TestTrails(TestCase):
         with impersonate(self.users[0]):
             self.assertEqual(get_current_user(), self.users[0])
         self.assertEqual(get_current_user(), None)
+        # Test when request raises exception.
+        try:
+            response = self.client.get(url + '?raise=1')
+        except RuntimeError:
+            response = None
+        self.assertEqual(response, None)
+        self.assertEqual(get_current_user(), None)
 
     def test_serialize_instance(self):
         # Test normal serialization.
@@ -65,6 +72,9 @@ class TestTrails(TestCase):
         user.last_name = 'Lasterson'
         user_dict = serialize_instance(user, before=True)
         self.assertEqual(user_dict['last_name'], original_last_name)
+
+    def _test_admin(self):
+        raise NotImplementedError
 
     def _test_trails(self):
         raise NotImplementedError
