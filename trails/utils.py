@@ -74,6 +74,15 @@ def record_trail(action, instance, data=None, user=None):
     # Skip recording changes for the Trail model itself.
     if isinstance(instance, Trail):
         return
+    # Skip excluded apps and models.
+    app_label = instance._meta.app_label
+    model_name = getattr(instance._meta, 'model_name',
+                         getattr(instance._meta, 'module_name'))
+    excludes = get_setting('TRAILS_EXCLUDE')
+    if app_label in excludes:
+        return
+    if '%s.%s' % (app_label, model_name) in excludes:
+        return
 
     # FIXME: model_to_dict isn't JSON serializable if there's a file field.
     #if action == 'add' and data is None:

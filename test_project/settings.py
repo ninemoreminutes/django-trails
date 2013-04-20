@@ -47,7 +47,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'public', 'media')
 MIDDLEWARE_CLASSES += (
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'devserver.middleware.DevServerMiddleware',
-    'trails.middleware.RequestUserMiddleware',
+    'trails.middleware.CurrentRequestMiddleware',
 )
 
 TEMPLATE_DIRS = (

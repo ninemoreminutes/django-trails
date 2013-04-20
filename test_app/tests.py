@@ -45,6 +45,13 @@ class TestTrails(TestCase):
         with impersonate(self.users[0]):
             self.assertEqual(get_current_user(), self.users[0])
         self.assertEqual(get_current_user(), None)
+        # Test impersonate(None) within view requested by logged in user.
+        self.client.login(username=self.users[0].username,
+                          password=self.user_passwords[0])
+        response = self.client.get(url + '?impersonate=1')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, unicode(None))
+        self.assertEqual(get_current_user(), None)
         # Test when request raises exception.
         try:
             response = self.client.get(url + '?raise=1')

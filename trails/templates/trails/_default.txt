@@ -1,0 +1,1 @@
+{% load i18n %}{{ trail.action|capfirst }} {% firstof trail.content_object trail.content_unicode %} {% trans 'by' %} {% firstof trail.user trail.user_unicode %} {% trans 'on' %} {{ trail.created|date:"DATETIME_FORMAT" }}

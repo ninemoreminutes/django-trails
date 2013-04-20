@@ -1,0 +1,31 @@
+{% extends "admin/object_history.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+<div class="module">
+    <table id="change-history">
+        <thead>
+        <tr>
+            <th scope="col">{% trans 'Date/time' %}</th>
+            <th scope="col">{% trans 'User' %}</th>
+            <th scope="col">{% trans 'Action' %}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for trail in trails %}
+        <tr>
+            <th scope="row">{{ trail.created|date:"DATETIME_FORMAT" }}</th>
+            <td>{% firstof trail.user trail.user_unicode %}</td>
+            <td>{{ trail.action|capfirst }} {% firstof trail.content_object trail.content_unicode %}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">{% trans 'No history available for this object.' %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+{% endblock %}

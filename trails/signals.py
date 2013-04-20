@@ -2,7 +2,7 @@
 from django.dispatch import Signal
 
 # Django-Trails
-from trails.utils import record_trail
+from trails.utils import serialize_instance, record_trail
 
 __all__ = []
 
@@ -13,7 +13,8 @@ model_deleted = Signal(providing_args=['instance', 'raw', 'using'])
 
 
 def on_model_added(sender, **kwargs):
-    record_trail('add', kwargs.get('instance', None))
+    record_trail('add', kwargs.get('instance', None),
+                 serialize_instance(kwargs.get('instance')))
 model_added.connect(on_model_added)
 
 

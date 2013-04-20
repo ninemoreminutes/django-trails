@@ -11,6 +11,9 @@ TRAILS_USER_ANONYMOUS = u'(anonymous)'
 # Record trails when request.user is the anonymous user?
 TRAILS_LOG_USER_ANONYMOUS = True
 
+# List of strings specifying app_label or app_label.ModelName to exclude.
+TRAILS_EXCLUDE = []
+
 # Record trails to the database?
 TRAILS_USE_DATABASE = True
 
@@ -19,3 +22,6 @@ TRAILS_USE_LOGGING = False
 
 # Logger name to use for the Python logging module.
 TRAILS_LOGGER = 'trails'
+
+# Replace default admin history view with trails history view?
+TRAILS_ADMIN_HISTORY = False
