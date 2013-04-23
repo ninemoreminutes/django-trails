@@ -28,6 +28,7 @@ setup(
     ],
     setup_requires=[],
     tests_require=[
+        'beautifulsoup4',
         'Django',
         'django-debug-toolbar',
         'django-devserver',
@@ -51,7 +52,7 @@ setup(
     ],
     options={
         'egg_info': {
-            'tag_svn_revision': 1,
+            'tag_svn_revision': 0,
             'tag_build': '.dev',
         },
         'build_sphinx': {

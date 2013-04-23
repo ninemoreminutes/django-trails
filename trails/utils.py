@@ -54,7 +54,7 @@ def serialize_instance(instance, before=False, related=False):
         m2m_pks = getattr(instance, field.name).values_list('pk', flat=True)
         #print field.name, values
         #d[field.name] = m2m_pks
-    print 'NEW DICT...', d
+    #print 'NEW DICT...', d
     return d
 
 

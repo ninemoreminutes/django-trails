@@ -1,4 +1,5 @@
 # PIP Requirements (for automated testing with tox)
+beautifulsoup4
 django-debug-toolbar
 django-devserver
 django-extensions
