@@ -1,8 +1,16 @@
+from __future__ import with_statement
+
+# Python
+from copy import copy
+import urlparse
+
 # BeautifulSoup
-from bs4 import BeautifulSoup
+from BeautifulSoup import BeautifulSoup
 
 # Django
 from django.test import TestCase
+from django.test.signals import template_rendered
+from django.test.utils import ContextList
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
@@ -14,6 +22,46 @@ from trails.models import *
 from trails.middleware import *
 from trails.signals import model_added, model_changed, model_deleted
 from trails.utils import *
+
+
+class AssertTemplateUsedContext(object):
+    # Borrowed from Django >= 1.4 to test using Django 1.3.
+
+    def __init__(self, test_case, template_name):
+        self.test_case = test_case
+        self.template_name = template_name
+        self.rendered_templates = []
+        self.rendered_template_names = []
+        self.context = ContextList()
+
+    def on_template_render(self, sender, signal, template, context, **kwargs):
+        self.rendered_templates.append(template)
+        self.rendered_template_names.append(template.name)
+        self.context.append(copy(context))
+
+    def test(self):
+        return self.template_name in self.rendered_template_names
+
+    def message(self):
+        return '%s was not rendered.' % self.template_name
+
+    def __enter__(self):
+        template_rendered.connect(self.on_template_render)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        template_rendered.disconnect(self.on_template_render)
+        if exc_type is not None:
+            return
+
+        if not self.test():
+            message = self.message()
+            if len(self.rendered_templates) == 0:
+                message += ' No template was rendered.'
+            else:
+                message += ' Following templates were rendered: %s' % (
+                    ', '.join(self.rendered_template_names))
+            self.test_case.fail(message)
 
 
 class TestSignalHandler(object):
@@ -43,15 +91,16 @@ class TestTrails(TestCase):
         self.users = []
         self.groups = []
         self.superuser_password = User.objects.make_random_password()
-        self.superuser = User.objects.create_superuser('admin', None,
+        self.superuser = User.objects.create_superuser('admin', 'adm@ixmm.net',
                                                        self.superuser_password)
 
     def create_test_users_and_groups(self, n=2, prefix=''):
         for x in xrange(n):
             user_password = User.objects.make_random_password()
             self.user_passwords.append(user_password)
-            user = User.objects.create_user('%suser%d' % (prefix, x),
-                                            None, user_password)
+            username = '%suser%d' % (prefix, x)
+            user = User.objects.create_user(username, '%s@ixmm.net' % username,
+                                            user_password)
             self.users.append(user)
             group = Group.objects.create(name='%sgroup%d' % (prefix, x))
             self.groups.append(group)
@@ -283,9 +332,9 @@ class TestTrails(TestCase):
             txt_template = {
                 (Site, 'change'):   'trails/sites/change.txt',
             }.get(template_key, 'trails/_default.txt')
-            with self.assertTemplateUsed(html_template):
+            with AssertTemplateUsedContext(self, html_template):
                 trail.render('html')
-            with self.assertTemplateUsed(txt_template):
+            with AssertTemplateUsedContext(self, txt_template):
                 trail.render('txt')
 
     def test_admin(self):
@@ -312,15 +361,22 @@ class TestTrails(TestCase):
         for trail in Trail.objects.all():
             change_url = reverse('admin:%s_%s_change' %
                                  (app_label, model_name), args=(trail.pk,))
-            self.assertContains(response, change_url)
+            change_url_found = False
+            soup = BeautifulSoup(response.content)
+            for atag in soup.findAll('a', href=True):
+                target_url = urlparse.urljoin(changelist_url, atag['href'])
+                if target_url == change_url:
+                    change_url_found = True
+                    break
+            self.assertTrue(change_url_found)
         # Change view (should have no editable fields).
         response = self.client.get(change_url)
         self.assertEquals(response.status_code, 200)
         soup = BeautifulSoup(response.content)
-        for fs in soup.find_all('fieldset'):
-            self.assertFalse(fs.find_all('input'))
-            self.assertFalse(fs.find_all('select'))
-            self.assertFalse(fs.find_all('textarea'))
+        for fs in soup.findAll('fieldset'):
+            self.assertFalse(fs.findAll('input'))
+            self.assertFalse(fs.findAll('select'))
+            self.assertFalse(fs.findAll('textarea'))
         # Delete view via GET, then POST.
         delete_url = reverse('admin:%s_%s_delete' % (app_label, model_name),
                              args=(trail.pk,))

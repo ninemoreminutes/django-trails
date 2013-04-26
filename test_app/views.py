@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 # Django
 from django.http import HttpResponse
 

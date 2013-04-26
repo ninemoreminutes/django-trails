@@ -1,9 +1,10 @@
-# Python
-import json
-
 # Django
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
+try:
+    import json
+except ImportError:
+    from django.utils import simplejson as json
 
 # Django-Trails
 from trails.models import Trail

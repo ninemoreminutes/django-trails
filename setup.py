@@ -28,14 +28,15 @@ setup(
     ],
     setup_requires=[],
     tests_require=[
-        'beautifulsoup4',
+        'argparse',
+        'BeautifulSoup',
         'Django',
         'django-debug-toolbar',
         'django-devserver',
         'django-extensions',
         'django-hotrunner>=0.2.1',
         'django-jsonfield',
-        'django-setuptest>=0.1.2',
+        #'django-setuptest>=0.1.2',
         'South',
     ],
     test_suite='test_suite.TestSuite',
@@ -66,7 +67,6 @@ setup(
             'upload_dir': 'docs/_build/html',
         },
         'aliases': {
-            # FIXME: Add 'test' to both aliases below.
             'dev_build': 'egg_info sdist build_sphinx',
             'release_build': 'egg_info -b "" -R sdist build_sphinx',
         },
