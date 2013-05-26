@@ -1,5 +1,6 @@
 [run]
 branch = True
+omit = trails/migrations/*
 
 [report]
 # Regexes for lines to exclude from consideration

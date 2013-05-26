@@ -53,7 +53,8 @@ class Trail(models.Model):
     )
     data = JSONField(
         blank=True,
-        default='',
+        null=True,
+        default=None,
         editable=False,
     )
 
