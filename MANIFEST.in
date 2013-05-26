@@ -1,1 +1,3 @@
+include LICENSE
 include README
+recursive-include trails/templates *.html *.txt
