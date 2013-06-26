@@ -1,10 +1,9 @@
-# PIP Requirements (for automated testing with tox)
+# PIP Requirements (for automated testing with tox).
+
 argparse
-BeautifulSoup
-django-debug-toolbar
-django-devserver
+beautifulsoup4
 django-extensions
 django-hotrunner>=0.2.1
 django-jsonfield
-https://github.com/gregmuellegger/django-setuptest/archive/master.zip#egg=django-setuptest
+django-setuptest>=0.1.4
 South

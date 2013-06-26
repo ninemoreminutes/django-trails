@@ -1,6 +1,6 @@
 # Django
 from django.conf import settings
-from django.conf.urls.defaults import patterns, include, url
+from django.conf.urls import patterns, include, url
 
 urlpatterns = patterns('',
     url(r'^test_app/', include('test_app.urls', namespace='test_app',

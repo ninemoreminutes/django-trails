@@ -45,8 +45,6 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'public', 'media')
 
 MIDDLEWARE_CLASSES += (
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'devserver.middleware.DevServerMiddleware',
     'trails.middleware.CurrentRequestMiddleware',
 )
 
@@ -64,13 +62,24 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'debug_toolbar',
-    'devserver',
     'django_extensions',
     'south',
     'trails',
     'test_app',
 )
+
+try:
+    import debug_toolbar
+    INSTALLED_APPS += ('debug_toolbar',)
+    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+except ImportError:
+    pass
+
+try:
+    import devserver
+    INSTALLED_APPS += ('devserver',)
+except ImportError:
+    pass
 
 INTERNAL_IPS = ('127.0.0.1',)
 

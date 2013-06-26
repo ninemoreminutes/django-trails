@@ -4,8 +4,8 @@ from __future__ import with_statement
 from copy import copy
 import urlparse
 
-# BeautifulSoup
-from BeautifulSoup import BeautifulSoup
+# BeautifulSoup4
+from bs4 import BeautifulSoup
 
 # Django
 from django.test import TestCase
@@ -388,5 +388,6 @@ class TestTrails(TestCase):
         self.assertEquals(response.status_code, 403)
         # FIXME: History view (normal vs. override)
 
-    def _test_trails(self):
+    def _test_m2m(self):
+        self.create_test_users_and_groups()
         raise NotImplementedError

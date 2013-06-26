@@ -20,7 +20,7 @@ class ModelState(threading.local):
         pre_save.connect(self.pre_save_callback)
         post_save.connect(self.post_save_callback)
         post_delete.connect(self.post_delete_callback)
-        m2m_changed.connect(self.m2m_changed_callback)
+        #m2m_changed.connect(self.m2m_changed_callback)
         self.cache = {}
 
     def _get_key_for_instance(self, instance):
@@ -67,17 +67,19 @@ class ModelState(threading.local):
 
     def m2m_changed_callback(self, sender, **kwargs):
         # FIXME: Not currently tracking M2M changes!!!
-        #print 'm2m_changed', sender, kwargs
+        print 'm2m_changed', sender, kwargs
         action = kwargs['action']
         instance = kwargs['instance']
         other_model = kwargs['model']
         rev = kwargs['reverse']
+        print dir(sender._meta)
+        print sender._meta.app_label, sender._meta.module_name
         if action in ('pre_clear', 'pre_add', 'pre_remove'):
             pass
             #name = field.m2m_reverse_name()
             #old = [ str(getattr(x, name)) for x in sender.objects.all() ]
             #print old
-            #print sender.objects.all()
+            print sender.objects.all()
             # we know the new will exclude this, so its just all without this
             #ex = {"%s__in" % field.m2m_reverse_field_name():kwargs["pk_set"]}
             #new = [ str(getattr(x, name)) for x in
@@ -85,6 +87,7 @@ class ModelState(threading.local):
             #diff = { "old": old, "new": new }
         elif action in ('post_clear', 'post_add', 'post_remove'):
             pass
+            print sender.objects.all()
 
     def post_delete_callback(self, sender, **kwargs):
         model_deleted.send(sender, instance=kwargs.get('instance'),
