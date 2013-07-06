@@ -2,6 +2,7 @@
 
 argparse
 beautifulsoup4
+django-crum
 django-extensions
 django-hotrunner>=0.2.1
 django-jsonfield

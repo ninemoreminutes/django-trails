@@ -23,7 +23,8 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'Django>=1.3',
+        'Django>=1.4',
+        'django-crum',
         'django-jsonfield',
     ],
     setup_requires=[],
@@ -31,6 +32,7 @@ setup(
         'argparse',
         'beautifulsoup4',
         'Django',
+        'django-crum',
         'django-extensions',
         'django-hotrunner>=0.2.1',
         'django-jsonfield',

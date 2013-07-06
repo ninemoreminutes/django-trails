@@ -3,8 +3,8 @@ from __future__ import with_statement
 # Django
 from django.http import HttpResponse
 
-# Django-Trails
-from trails.api import get_current_user, impersonate
+# Django-CRUM
+from crum import get_current_user, impersonate
 
 
 def index(request):

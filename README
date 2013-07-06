@@ -19,4 +19,4 @@ and does not yet support the following:
 * Tests to verify handling of custom model fields.
 * Actually using the Python logging module.
 
-It is currently tested against Python 2.6 and 2.7 and Django 1.4, 1.5 and 1.6.
+It is tested against Python 2.6 and 2.7 using Django 1.4, 1.5 and 1.6.

@@ -17,9 +17,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.db.models.signals import pre_save, post_save
 
+# Django-CRUM
+from crum import get_current_user, impersonate
+
 # Django-Trails
 from trails.models import *
-from trails.middleware import *
 from trails.signals import model_added, model_changed, model_deleted
 from trails.utils import *
 

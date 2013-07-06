@@ -45,7 +45,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'public', 'media')
 
 MIDDLEWARE_CLASSES += (
-    'trails.middleware.CurrentRequestMiddleware',
+    'crum.CurrentRequestUserMiddleware',
 )
 
 TEMPLATE_DIRS = (
@@ -93,9 +93,3 @@ DEVSERVER_DEFAULT_PORT = '8055'
 TEST_RUNNER = 'hotrunner.HotRunner'
 
 EXCLUDED_TEST_APPS = [x for x in INSTALLED_APPS if x != 'test_app']
-
-# Fix for OverflowError when testing using Python 2.5 and Django 1.4.
-PASSWORD_HASHERS = (
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
-    'django.contrib.auth.hashers.MD5PasswordHasher',
-)

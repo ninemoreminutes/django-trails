@@ -7,10 +7,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
 from django.forms.models import model_to_dict
 
+# Django-CRUM
+from crum import get_current_user
+
 # Django-Trails
 from trails import settings as trails_settings
 from trails.models import Trail
-from trails.middleware import get_current_user
 
 __all__ = ['record_trail', 'serialize_instance']
 
