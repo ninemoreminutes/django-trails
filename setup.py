@@ -34,7 +34,7 @@ setup(
         'Django',
         'django-crum',
         'django-extensions',
-        'django-hotrunner>=0.2.1',
+        'django-hotrunner>=0.2.2',
         'django-jsonfield',
         'django-setuptest>=0.1.4',
         'South',

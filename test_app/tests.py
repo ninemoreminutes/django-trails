@@ -106,7 +106,10 @@ class TestTrails(TestCase):
             self.users.append(user)
             group = Group.objects.create(name='%sgroup%d' % (prefix, x))
             self.groups.append(group)
-            user.groups.add(group)
+            if x % 2:
+                user.groups.add(group)
+            else:
+                group.user_set.add(user)
 
     def test_middleware(self):
         self.create_test_users_and_groups()
@@ -390,6 +393,12 @@ class TestTrails(TestCase):
         self.assertEquals(response.status_code, 403)
         # FIXME: History view (normal vs. override)
 
-    def _test_m2m(self):
+    def test_m2m(self):
         self.create_test_users_and_groups()
+        for group in Group.objects.all():
+            for user in group.user_set.all():
+                group.user_set.remove(user)
+                break
+            group.user_set.clear()
+        
         raise NotImplementedError
