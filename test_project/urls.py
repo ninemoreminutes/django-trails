@@ -1,22 +1,29 @@
 # Django
 from django.conf import settings
-from django.conf.urls import patterns, include, url
+from django.contrib import admin
+try:
+    from django.urls import include, re_path
+except ImportError:
+    raise
+    from django.conf.urls import include, url as re_path
 
-urlpatterns = patterns('',
-    url(r'^test_app/', include('test_app.urls', namespace='test_app',
-                               app_name='test_app')),
-)
 
-if 'django.contrib.admin' in settings.INSTALLED_APPS:
-    from django.contrib import admin
-    admin.autodiscover()
-    #urlpatterns += patterns('django.views.generic.simple',
-        #url(r'^$', 'redirect_to', {'url': '/admin/'}),
-    #)
-    urlpatterns += patterns('',
-        url(r'', include(admin.site.urls)),
-    )
+admin.autodiscover()
 
-if 'django.contrib.staticfiles' in settings.INSTALLED_APPS and settings.DEBUG:
+urlpatterns = [
+    re_path(r'^admin/', admin.site.urls),
+    re_path(r'^test_app/', include('test_project.test_app.urls')),
+]
+
+if settings.DEBUG:
+    try:
+        import debug_toolbar
+        urlpatterns = [
+            re_path(r'^__debug__/', include(debug_toolbar.urls)),
+        ] + urlpatterns
+    except ImportError:
+        pass
+
+if settings.DEBUG:
     from django.contrib.staticfiles.urls import staticfiles_urlpatterns
     urlpatterns += staticfiles_urlpatterns()

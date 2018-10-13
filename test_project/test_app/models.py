@@ -1,15 +1,23 @@
 # Django
 from django.db import models
 
+# Django-Polymorphic
+from polymorphic.models import PolymorphicModel
 
-class Apple(models.Model):
+
+class Fruit(PolymorphicModel):
+
+    name = models.CharField(max_length=100)
+
+
+class Apple(Fruit):
     """Test model with all built-in Django field types."""
 
     big_int_val = models.BigIntegerField(default=0)
     #binary_val = models.BinaryField(default='')
     bool_val = models.BooleanField(default=False)
     char_val = models.CharField(max_length=100)
-    csi_val = models.CommaSeparatedIntegerField(max_length=100, default='')
+    #csi_val = models.CommaSeparatedIntegerField(max_length=100, default='')
     date_val = models.DateField(null=True, default=None)
     created_date = models.DateField(auto_now_add=True)
     modified_date = models.DateField(auto_now=True)
@@ -18,21 +26,29 @@ class Apple(models.Model):
     file_val = models.FileField(upload_to='apple_files')
     file_path_val = models.FilePathField(path='')
     float_val = models.FloatField()
-    #image_val = models.ImageField(upload_to='apple_images')
+    image_val = models.ImageField(upload_to='apple_images')
     int_val = models.IntegerField()
-    ip_val = models.IPAddressField()
+    #ip_val = models.IPAddressField()
     generic_ip_val = models.GenericIPAddressField()
     null_bool_val = models.NullBooleanField()
     # FIXME
 
 
-class Banana(models.Model):
+class Banana(Fruit):
 
-    name = models.CharField(max_length=100)
-    apple = models.ForeignKey('Apple', related_name='bananas', null=True, default=None)
+    the_apple = models.ForeignKey(  # Can't be named `apple` with polymorphic.
+        'Apple',
+        related_name='bananas',
+        on_delete=models.SET_NULL,
+        null=True,
+        default=None,
+    )
 
 
-class Cucumber(models.Model):
+class Cherry(Fruit):
 
-    name = models.CharField(max_length=100)
-    bananas = models.ManyToManyField('Banana', blank=True, related_name='cucumbers')
+    bananas = models.ManyToManyField(
+        'Banana',
+        related_name='cherries',
+        blank=True,
+    )

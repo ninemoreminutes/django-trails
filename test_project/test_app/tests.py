@@ -2,7 +2,7 @@ from __future__ import with_statement
 
 # Python
 from copy import copy
-import urlparse
+from urllib.parse import urlparse
 
 # BeautifulSoup4
 from bs4 import BeautifulSoup
@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 from django.test import TestCase
 from django.test.signals import template_rendered
 from django.test.utils import ContextList
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
@@ -22,8 +22,8 @@ from crum import get_current_user, impersonate
 
 # Django-Trails
 from trails.models import *
-from trails.signals import model_added, model_changed, model_deleted
-from trails.utils import *
+# from trails.signals import model_added, model_changed, model_deleted
+from trails.utils import serialize_instance
 
 
 class AssertTemplateUsedContext(object):
@@ -97,7 +97,7 @@ class TestTrails(TestCase):
                                                        self.superuser_password)
 
     def create_test_users_and_groups(self, n=2, prefix=''):
-        for x in xrange(n):
+        for x in range(n):
             user_password = User.objects.make_random_password()
             self.user_passwords.append(user_password)
             username = '%suser%d' % (prefix, x)
@@ -111,7 +111,7 @@ class TestTrails(TestCase):
             else:
                 group.user_set.add(user)
 
-    def test_middleware(self):
+    def _test_middleware(self):
         self.create_test_users_and_groups()
         self.assertEqual(get_current_user(), None)
         url = reverse('test_app:index')
@@ -146,28 +146,7 @@ class TestTrails(TestCase):
         self.assertEqual(response, None)
         self.assertEqual(get_current_user(), None)
 
-    def test_serialize_instance(self):
-        self.create_test_users_and_groups()
-        # Test normal serialization.
-        user = User.objects.get(pk=self.users[0].pk)
-        user_dict = serialize_instance(user)
-        self.assertEqual(user_dict['pk'], user.pk)
-        self.assertEqual(user_dict['username'], user.username)
-        self.assertEqual(set(user_dict['groups']),
-                         set(user.groups.values_list('pk', flat=True)))
-        # Test that serialization defaults to in-memory version of object.
-        user = User.objects.get(pk=self.users[0].pk)
-        user.first_name = 'Firsty'
-        user_dict = serialize_instance(user)
-        self.assertEqual(user_dict['first_name'], 'Firsty')
-        # Test serialization before (retrieves unmodified from database).
-        user = User.objects.get(pk=self.users[0].pk)
-        original_last_name = user.last_name
-        user.last_name = 'Lasterson'
-        user_dict = serialize_instance(user, before=True)
-        self.assertEqual(user_dict['last_name'], original_last_name)
-
-    def test_model_added(self):
+    def _test_model_added(self):
         # Test that the model_added signal is called when an instance is added.
         tsh = TestSignalHandler()
         model_added.connect(tsh)
@@ -187,7 +166,7 @@ class TestTrails(TestCase):
         self.assertEqual(tsh.sender, Group)
         self.assertEqual(tsh.get('instance'), group)
 
-    def test_model_changed(self):
+    def _test_model_changed(self):
         # Test that the model_changed signal is called when an instance is
         # changed.
         tsh = TestSignalHandler()
@@ -211,7 +190,7 @@ class TestTrails(TestCase):
         Group.objects.filter(pk=group.pk).update(name='Explorers')
         self.assertFalse(tsh)
 
-    def test_model_deleted(self):
+    def _test_model_deleted(self):
         # Test that the model_deleted signal is called when an instance is
         # deleted.
         tsh = TestSignalHandler()
@@ -234,7 +213,7 @@ class TestTrails(TestCase):
         self.assertEqual(tsh.sender, Group)
         #self.assertEqual(tsh.get('instance').pk, group_pk)
 
-    def test_model(self):
+    def _test_model(self):
         pre_tsh = TestSignalHandler()
         pre_save.connect(pre_tsh)
         post_tsh = TestSignalHandler()
@@ -259,7 +238,7 @@ class TestTrails(TestCase):
         self.assertFalse(pre_tsh)
         self.assertFalse(post_tsh)
 
-    def test_manager_for_models(self):
+    def _test_manager_for_models(self):
         with impersonate(self.superuser):
             self.create_test_users_and_groups()
         # All normal users.
@@ -304,7 +283,7 @@ class TestTrails(TestCase):
             self.assertTrue(trail.content_object in instances[0] or
                             trail.content_object in instances[1])
 
-    def test_render(self):
+    def _test_render(self):
         # Create test user/group data with changes/deletes.
         with impersonate(self.superuser):
             self.create_test_users_and_groups()
@@ -342,7 +321,7 @@ class TestTrails(TestCase):
             with AssertTemplateUsedContext(self, txt_template):
                 trail.render('txt')
 
-    def test_admin(self):
+    def _test_admin(self):
         app_label = Trail._meta.app_label
         model_name = (getattr(Trail._meta, 'model_name', None) or
                       getattr(Trail._meta, 'module_name', None))
@@ -393,7 +372,7 @@ class TestTrails(TestCase):
         self.assertEquals(response.status_code, 403)
         # FIXME: History view (normal vs. override)
 
-    def test_m2m(self):
+    def _test_m2m(self):
         self.create_test_users_and_groups()
         for group in Group.objects.all():
             for user in group.user_set.all():
@@ -402,3 +381,130 @@ class TestTrails(TestCase):
             group.user_set.clear()
         
         raise NotImplementedError
+
+
+def test_serialize_instance(user_instance):
+    # Test normal serialization of a model instance.
+    user_dict = serialize_instance(user_instance)
+    assert user_dict['__pk'] == user_instance.pk
+    assert user_dict['username'] == user_instance.username
+    assert set(user_dict['groups']) == set(user_instance.groups.values_list('pk', flat=True))
+    #print(user_dict)
+    assert False
+
+
+def test_serialize_instance_in_memory(user_instance):
+    # Test serialization before (retrieves unmodified from database).
+    user_instance.first_name = 'First'
+    user_dict = serialize_instance(user_instance)
+    assert user_dict['first_name'] == user_instance.first_name
+
+
+def test_serialize_instance_before(user_instance):
+    # Test serialization before (retrieves unmodified from database).
+    original_last_name = user_instance.last_name
+    user_instance.last_name = 'Last'
+    user_dict = serialize_instance(user_instance, before=True)
+    assert user_dict['last_name'] == original_last_name
+
+
+def test_serialize_deferred_instance(user_instance, django_user_model):
+    # Test that serialization of an instance with a deferred field works.
+    user_deferred = django_user_model.objects.filter(pk=user_instance.pk).defer('first_name').first()
+    user_dict = serialize_instance(user_deferred)
+    assert 'first_name' in user_dict
+
+
+def _test_track_added(settings, mock_record_trail):
+    settings.TRAILS = {'INCLUDE_MODELS': []}
+    # Test that the model_added signal is called when an instance is added.
+    tsh = TestSignalHandler()
+    model_added.connect(tsh)
+    self.assertFalse(tsh)
+    group = Group.objects.create(name='Trail Blazers')
+    self.assertTrue(tsh)
+    self.assertEqual(tsh.sender, Group)
+    self.assertEqual(tsh.get('instance'), group)
+    # Shouldn't be called when an instance is created in memory, but only
+    # when it is saved.
+    tsh.reset()
+    self.assertFalse(tsh)
+    group = Group(name='Path Finders')
+    self.assertFalse(tsh)
+    group.save()
+    self.assertTrue(tsh)
+    self.assertEqual(tsh.sender, Group)
+    self.assertEqual(tsh.get('instance'), group)
+
+
+def test_m2m(user_instance, group_instance, another_user_instance, another_group_instance):
+    user_instance.groups.remove(group_instance)
+    another_group_instance.user_set.remove(another_user_instance)
+    user_instance.groups.add(group_instance, another_group_instance)
+    user_instance.groups.add(group_instance)
+    user_instance.groups.clear()
+    assert False
+
+
+def test_track_user_login(settings, mock_record_trail, client, user_instance):
+    settings.TRAILS = {'TRACK_LOGIN': True, 'INCLUDE_MODELS': []}
+    mock_record_trail.reset_mock()
+    client.force_login(user_instance)
+    assert mock_record_trail.call_count == 1
+    assert mock_record_trail.call_args[0] == ('login',)
+    assert set(mock_record_trail.call_args[1].keys()) == {'user', 'request'}
+    assert mock_record_trail.call_args[1]['user'] == user_instance
+
+
+def test_track_user_login_disabled(settings, mock_record_trail, client, user_instance):
+    settings.TRAILS = {'TRACK_LOGIN': False, 'INCLUDE_MODELS': []}
+    mock_record_trail.reset_mock()
+    client.force_login(user_instance)
+    assert not mock_record_trail.called
+
+
+def test_track_user_logout(settings, mock_record_trail, client, user_instance):
+    settings.TRAILS = {'TRACK_LOGOUT': True, 'INCLUDE_MODELS': []}
+    client.force_login(user_instance)
+    mock_record_trail.reset_mock()
+    client.logout()
+    assert mock_record_trail.call_count == 1
+    assert mock_record_trail.call_args[0] == ('logout',)
+    assert set(mock_record_trail.call_args[1].keys()) == {'user', 'request'}
+    assert mock_record_trail.call_args[1]['user'] == user_instance
+
+
+def test_track_user_logout_without_login(settings, mock_record_trail, client, user_instance):
+    settings.TRAILS = {'TRACK_LOGOUT': True, 'INCLUDE_MODELS': []}
+    mock_record_trail.reset_mock()
+    client.logout()
+    assert mock_record_trail.call_count == 1
+    assert mock_record_trail.call_args[0] == ('logout',)
+    assert set(mock_record_trail.call_args[1].keys()) == {'user', 'request'}
+    assert mock_record_trail.call_args[1]['user'] is None
+
+
+def test_track_user_logout_disabled(settings, mock_record_trail, client, user_instance):
+    settings.TRAILS = {'TRACK_LOGOUT': False, 'INCLUDE_MODELS': []}
+    client.force_login(user_instance)
+    mock_record_trail.reset_mock()
+    client.logout()
+    assert not mock_record_trail.called
+
+
+def test_track_user_failed_login(settings, mock_record_trail, client, user_instance):
+    settings.TRAILS = {'TRACK_FAILED_LOGIN': True, 'INCLUDE_MODELS': []}
+    mock_record_trail.reset_mock()
+    client.login(username=user_instance.username, password='badpass')
+    assert mock_record_trail.call_count == 1
+    assert mock_record_trail.call_args[0] == ('failed-login',)
+    assert set(mock_record_trail.call_args[1].keys()) == {'data', 'request'}
+    assert mock_record_trail.call_args[1]['data']['username'] == user_instance.username
+    assert '****' in mock_record_trail.call_args[1]['data']['password']
+
+
+def test_track_user_failed_login_disabled(settings, mock_record_trail, client, user_instance):
+    settings.TRAILS = {'TRACK_FAILED_LOGIN': False, 'INCLUDE_MODELS': []}
+    mock_record_trail.reset_mock()
+    client.login(username=user_instance.username, password='badpass')
+    assert not mock_record_trail.called

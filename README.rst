@@ -1,10 +1,9 @@
 Django Trails
 =============
 
-Django Trails is a Django app to provide audit logging capability to your
-Django project.  Its main goals are to:
+Django Trails is a Django app to provide audit logging capability for a Django
+project.  Its main goals are to:
 
-* Capture the current request and user with middleware.
 * Capture database changes using signals.
 * Log user and changes to the database.
 * Log user and changes using Python logging library.
@@ -18,5 +17,3 @@ and does not yet support the following:
 * Tests to verify correct handling of proxy models or model inheritance.
 * Tests to verify handling of custom model fields.
 * Actually using the Python logging module.
-
-It is tested against Python 2.6 and 2.7 using Django 1.4, 1.5 and 1.6.

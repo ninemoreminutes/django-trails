@@ -2,116 +2,11 @@
 {% extends "admin/base.html" %}
 {% load i18n %}
  
-{% block title %}{{ title }} | {% trans 'Django Trails Admin' %}{% endblock %}
+{% block title %}{{ title }} | {% trans 'Django-Trails Admin' %}{% endblock %}
 
 {% block extrastyle %}
-{{ block.super }}
 <link href="{{ STATIC_URL }}step.ico" rel="shortcut icon" />
-<style type="text/css">
-/*
-From http://colorschemedesigner.com/#3o21zw0w0w0w0
-  Primary Color:
-    057D9F  216477  025167  39AECF  61B7CF
-  Complementary Color:
-    FF8100  BF7830  A65400  FFA040  FFBA73
-    
-*/
-
-/* Heading and button background colors. */
-#header
-{
-  background: #057D9F !important;
-}
-.module h2,
-#content-related .module h2,
-.module caption,
-.inline-group h2,
-.button.default,
-input[type="submit"].default,
-.submit-row input.default
-{
-  background: #057D9F !important;
-}
-body
-{
-  background-color: #F0F0F0;
-}
-
-/* Heading and button foreground colors. */
-#branding h1
-{
-  color: white !important;
-}
-.module h2,
-.module h2 a,
-#content-related .module h2,
-.module caption,
-.inline-group h2,
-a.section,
-a.section:link,
-a.section:visited,
-a.section:hover,
-.button.default,
-input[type="submit"].default,
-.submit-row input.default
-{
-  color: white !important;
-}
-
-/* Link color. */
-a,
-a:link,
-a:visited,
-#changelist-filter a:hover,
-a:hover
-{
-  color: #FF8100;
-}
-
-/* Button border color. */
-.button.default,
-input[type="submit"].default,
-.submit-row input.default,
-.selector h2
-{
-  border-color: #216477 !important;
-}
-#header {
-  color: #FFBA73;
-  border-bottom: solid 2px #025167;
-}
-
-a:hover,
-a.section:hover
-{
-  text-decoration: underline;
-}
-
-tr.row1 {
-  background-color: #F5F5F5;
-}
-
-ul.messagelist li {
-  background-color: #B1D7Ef;
-}
-.errornote {
-  border-color: #A65400 !important;
-  color: #A65400 !important;
-  background-color: #FFBA73 !important;
-}
-.errorlist li {
-  border-color: #A65400 !important;
-  background-color: #FF8100 !important;
-}
-.errors {
-  background-color: #FFBA73 !important;
-}
-.errors input,
-.errors select,
-.errors textarea {
-  border: 1px solid #A65400 !important;
-}
-</style>
+{{ block.super }}
 {% endblock %}
 
 {% block extrahead %}
@@ -123,7 +18,7 @@ ul.messagelist li {
 {% endblock %}
 
 {% block branding %}
-<h1 id="site-name">{% trans 'Django Trails Admin' %}</h1>
+<h1 id="site-name">{% trans 'Django-Trails Admin' %}</h1>
 {% endblock %}
 
 {% block userlinks %}
