@@ -3,7 +3,7 @@ import json
 
 # Django
 from django.contrib import admin
-from django.utils.html import format_html, format_html_join
+from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 
 # Django-Trails
@@ -100,15 +100,15 @@ class TrailHistoryMixin(object):
         # Then get the history for this object.
         opts = model._meta
         app_label = opts.app_label
-        #action_list = LogEntry.objects.filter(
+        # action_list = LogEntry.objects.filter(
         #    object_id=unquote(object_id),
         #    content_type__id__exact=\
         #        ContentType.objects.get_for_model(model).id
-        #).select_related().order_by('action_time')
+        # ).select_related().order_by('action_time')
 
         context = {
             'title': _('Change history: %s') % force_text(obj),
-            #'action_list': action_list,
+            # 'action_list': action_list,
             'module_name': capfirst(force_text(opts.verbose_name_plural)),
             'object': obj,
             'app_label': app_label,
@@ -124,4 +124,4 @@ class TrailHistoryMixin(object):
 
 
 if trails_settings.ADMIN_HISTORY:
-    pass # FIXME: Monkeypatch!
+    pass  # FIXME: Monkeypatch!

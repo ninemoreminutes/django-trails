@@ -1,7 +1,6 @@
 # Python
 import collections
 import fnmatch
-from pprint import pprint
 
 # Django
 from django.apps import apps
@@ -25,7 +24,6 @@ class ModelRegistry(object):
         self.user_tracker = None
 
     def add(self, model_class, model_fields):
-        #print(model_class, model_class._meta.auto_created)
         model_tracker = self.model_trackers.get(model_class, None)
         if not model_tracker or model_tracker.model_fields != model_fields:
             self.model_trackers[model_class] = ModelTracker(model_class, model_fields)
@@ -55,7 +53,6 @@ class ModelRegistry(object):
         for app_config in apps.get_app_configs():
             for model_class in app_config.get_models():
                 opts = model_class._meta
-                #print('  ', model_class, opts.app_label, opts.model_name, opts.model)
 
                 # Indicate model class is neither explicitly included or excluded.
                 model_class_map[model_class] = None
@@ -75,7 +72,7 @@ class ModelRegistry(object):
                         field_name = field.get_accessor_name()
                     else:
                         field_name = getattr(field, 'attname', field.name)
-                    if field.many_to_many:
+                    if field.many_to_many and field_name:
                         m2m_model_class = getattr(model_class, field_name).through
                         model_field_map[model_class][field_name] = m2m_model_class
                     elif not field.concrete:
@@ -86,10 +83,10 @@ class ModelRegistry(object):
                         if field.one_to_one or (field.many_to_one and field.related_model):
                             if field_name != field.name:
                                 model_field_map[model_class][field.name] = True
-                                model_field_map[model_class][field_name] = field.name  # fk_field_id -> fk_field
+                                model_field_map[model_class][field_name] = (field.name, field.related_model)  # fk_field_id -> (fk_field, rel_model)
                             else:
                                 model_field_map[model_class][field_name] = True
-                
+
                 # Update mapping of app.model.field labels from model fields.
                 for field_name, field_status in model_field_map[model_class].items():
                     field_label = '{}.{}.{}'.format(opts.app_label, opts.model_name, field_name)
@@ -148,7 +145,8 @@ class ModelRegistry(object):
             else:
                 self.remove(model_class)
 
-        # Update registry with many to many models included/excluded.
+        # Build mapping of M2M model classes to the (model_class, field_name) of
+        # each side of the M2M relationship.
         m2m_model_classes = collections.OrderedDict()
         for model_class, model_included in model_class_map.items():
             model_fields = model_field_map[model_class]
@@ -158,7 +156,8 @@ class ModelRegistry(object):
                 m2m_model_class = field_action
                 m2m_related_model_fields = m2m_model_classes.setdefault(m2m_model_class, collections.OrderedDict())
                 m2m_related_model_fields[(model_class, field_name)] = model_included
-        #pprint(m2m_model_classes)
+
+        # Update registry with many to many models included/excluded.
         for m2m_model_class, related_model_fields in m2m_model_classes.items():
             if any(related_model_fields.values()):
                 self.add_m2m(m2m_model_class, set(related_model_fields.keys()))

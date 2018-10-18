@@ -1,6 +1,7 @@
 # Python
 import logging
 import pprint
+import uuid
 
 # Django
 from django.contrib.contenttypes.models import ContentType
@@ -17,6 +18,10 @@ from .utils import log_trace
 
 
 def run_pipeline(**kwargs):
+    '''
+    Run pipeline functions in order, updating kwargs for the next function with
+    the results of the previous one.
+    '''
     for pipeline_function in trails_settings.PIPELINE:
         try:
             log_trace('running pipeline function: %r(**%r)', pipeline_function, kwargs)
@@ -31,42 +36,67 @@ def run_pipeline(**kwargs):
 
 
 def debug(**kwargs):
-    '''Print kwargs passed to the pipeline function.'''
+    '''
+    Print kwargs passed to the pipeline function.
+    '''
     pprint.pprint(kwargs)
 
 
 def assert_action(**kwargs):
-    '''Assert that every trail has an action.'''
+    '''
+    Assert that every trail has an action.
+    '''
     assert kwargs.get('action'), 'action must be present!'
 
 
 def add_request(**kwargs):
-    '''Add the current request to the pipeline.'''
+    '''
+    Add the current request to the pipeline.
+    '''
     request = kwargs.get('request') or get_current_request()
     return dict(request=request)
 
 
+def add_request_uuid(**kwargs):
+    '''
+    Add a UUID to the request object and return it to the pipeline.
+    '''
+    request = kwargs.get('request')
+    if request:
+        if not hasattr(request, 'trails_uuid'):
+            request.trails_uuid = uuid.uuid4()
+        return dict(request_uuid=request.trails_uuid)
+
+
 def add_session(**kwargs):
-    '''Add the current session to the pipeline.'''
+    '''
+    Add the current session to the pipeline.
+    '''
     session = kwargs.get('session') or getattr(kwargs.get('request'), 'session', None)
     return dict(session=session)
 
 
 def add_user(**kwargs):
-    '''Add the current user to the pipeline.'''
+    '''
+    Add the current user to the pipeline.
+    '''
     user = kwargs.get('user') or get_current_user()
     return dict(user=user)
 
 
 def check_no_user(**kwargs):
-    '''Based on setting, skip recording anything not done by a user account.'''
+    '''
+    Based on setting, skip recording anything not done by a user account.
+    '''
     user = kwargs.get('user')
     if not trails_settings.TRACK_NO_USER and user is None:
         return False
 
 
 def add_user_is_anonymous(**kwargs):
-    '''If user is anonymous, add a boolean flag and set user to None.'''
+    '''
+    If user is anonymous, add a boolean flag and set user to None.
+    '''
     user = kwargs.get('user')
     if user and getattr(user, 'is_anonymous', False):
         return dict(user=None, user_is_anonymous=True)
@@ -75,26 +105,44 @@ def add_user_is_anonymous(**kwargs):
 
 
 def check_anonymous_user(**kwargs):
-    '''Based on setting, skip recording anything done by the anonymous user.'''
+    '''
+    Based on setting, skip recording anything done by the anonymous user.
+    '''
     user_is_anonymous = kwargs.get('user_is_anonymous')
     if not trails_settings.TRACK_ANON_USER and user_is_anonymous:
         return False
 
 
 def add_request_text(**kwargs):
-    '''Add text representation of request.'''
+    '''
+    Add text representation of request (UUID + method + path).
+    '''
     request = kwargs.get('request')
-    # FIXME!
+    request_uuid = kwargs.get('request_uuid') or getattr(request, 'trails_uuid', None)
+    if request:
+        parts = []
+        if request_uuid:
+            parts.append('[{}]'.format(request_uuid))
+        if request.method:
+            parts.append(smart_text(request.method))
+        if request.get_full_path():
+            parts.append(smart_text(request.get_full_path()))
+        return dict(request_text=' '.join(parts))
 
 
 def add_session_text(**kwargs):
-    '''Add text representation of session.'''
+    '''
+    Add text representation of session (session key/id).
+    '''
     session = kwargs.get('session')
-    # FIXME!
+    session_key = getattr(session, 'session_key', '')
+    return dict(session_text=smart_text(session_key))
 
 
 def add_user_text(**kwargs):
-    '''Add text representation of user instance.'''
+    '''
+    Add text representation of user instance.
+    '''
     user = kwargs.get('user')
     user_is_anonymous = kwargs.get('user_is_anonymous')
     user_text = kwargs.get('user_text')
@@ -109,15 +157,19 @@ def add_user_text(**kwargs):
 
 
 def log_trail(**kwargs):
-    '''Log the trail to the configured logger.'''
+    '''
+    Log the trail to the configured logger.
+    '''
     if not trails_settings.USE_LOGGER:
         return
-    logger = logging.getLogger(trails_settings.LOGGER)
+    logger = logging.getLogger(trails_settings.LOGGER)  # noqa
     # FIXME: Implement!
 
 
 def create_database_trail(**kwargs):
-    '''Create the main trail record in the database.'''
+    '''
+    Create the main trail record in the database.
+    '''
     if not trails_settings.USE_DATABASE:
         return
     trail = Trail.objects.create(
@@ -132,7 +184,9 @@ def create_database_trail(**kwargs):
 
 
 def _create_database_trail_marker(trail, obj=None, obj_text=None, data=None, rel=None):
-    '''Helper to create a trail marker in the database for a model instance.'''
+    '''
+    Helper to create a trail marker in the database for a model instance.
+    '''
     if not trail or not obj:
         return
     if obj_text is None:
@@ -161,7 +215,9 @@ def _create_database_trail_marker(trail, obj=None, obj_text=None, data=None, rel
 
 
 def create_primary_database_trail_marker(**kwargs):
-    '''Create a trail marker for the primary model instance affected.'''
+    '''
+    Create a trail marker for the primary model instance affected.
+    '''
     if not trails_settings.USE_DATABASE:
         return
     primary_trail_marker = _create_database_trail_marker(
@@ -174,7 +230,9 @@ def create_primary_database_trail_marker(**kwargs):
 
 
 def create_related_database_trail_markers(**kwargs):
-    '''Create a trail marker for any related model instances affected.'''
+    '''
+    Create a trail marker for any related model instances affected.
+    '''
     if not trails_settings.USE_DATABASE:
         return
     related_instances = kwargs.get('related_instances') or []

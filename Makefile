@@ -12,12 +12,12 @@ requirements: core-requirements
 	pip-sync requirements.txt
 
 .PHONY: clean-pyc
-clean-pyc: requirements
+clean-pyc:
 	find . -iname "*.pyc" -delete
 	find . -iname __pycache__ | xargs rm -rf
 
 .PHONY: develop
-develop: clean-pyc
+develop: clean-pyc requirements
 	python setup.py develop
 
 .PHONY: check

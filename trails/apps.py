@@ -1,6 +1,5 @@
 # Django
-from django.apps import AppConfig, apps
-from django.conf import settings
+from django.apps import AppConfig
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -10,7 +9,6 @@ class TrailsConfig(AppConfig):
     verbose_name = _('Trails')
 
     def ready(self):
-        print('ready?')
-
         from .registry import registry
         registry.update_from_settings()
+        # FIXME: Check that CRUM middleware is installed?

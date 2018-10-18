@@ -3,7 +3,6 @@ import os
 import sys
 
 # Django
-import django
 from django.conf import global_settings
 
 # Update this module's local settings from the global settings module.
@@ -164,7 +163,7 @@ LOGGING = {
         },
         'trails': {
             'handlers': ['trails_console'],
-            'level': 5,
+            'level': 10,
             'propagate': False,
         },
     },

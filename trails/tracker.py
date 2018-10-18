@@ -1,19 +1,9 @@
 # Python
 import collections
-import functools
-import logging
 import threading
 
 # Django
-from django.db import models
-from django.core.signals import (
-    request_started,
-    request_finished,
-    got_request_exception,
-)
-from django.db.models.signals import (
-    pre_init,
-    post_init,
+from django.db.models.signals import (  # noqa
     pre_save,
     post_save,
     pre_delete,
@@ -27,15 +17,12 @@ from django.contrib.auth import (
     user_logged_out,
     user_login_failed,
 )
-from django.utils.encoding import force_text, smart_text
+from django.utils.encoding import force_text
 
-# Django-CRUM
-from crum import get_current_request
 
 # Django-Trails
 from .settings import trails_settings
 from .utils import log_trace, serialize_instance, record_trail
-# from trails.signals import model_added, model_changed, model_deleted
 
 __all__ = []
 
@@ -63,19 +50,48 @@ class ModelTracker(object):
 
     @property
     def discrete_fields(self):
-        return [field_name for field_name, field_action in self.model_fields.items() if field_action in (True, '__SENSITIVE__')]
+        '''
+        Return list of field names of all discreet (non-relation) fields being tracked.
+        '''
+        if not hasattr(self, '_discrete_fields'):
+            self._discrete_fields = [
+                field_name for field_name, field_action in self.model_fields.items()
+                if field_action in {True, '__SENSITIVE__'}
+            ]
+        return self._discrete_fields
 
     @property
     def sensitive_fields(self):
-        return [field_name for field_name, field_action in self.model_fields.items() if field_action == '__SENSITIVE__']
+        '''
+        Return list of field names of all sensitive fields being tracked.
+        '''
+        if not hasattr(self, '_sensitive_fields'):
+            self._sensitive_fields = [
+                field_name for field_name, field_action in self.model_fields.items()
+                if field_action == '__SENSITIVE__'
+            ]
+        return self._sensitive_fields
 
     @property
-    def m2m_fields(self):
-        return collections.OrderedDict([
-            (field_name, field_action)
-            for field_name, field_action in self.model_fields.items()
-            if isinstance(field_action, type) and issubclass(field_action, models.Model)
-        ])
+    def fk_field_map(self):
+        '''
+        Return mapping of fk_field to fk_field_id for tracked relational fields.
+        '''
+        if not hasattr(self, '_fk_field_map'):
+            self._fk_field_map = collections.OrderedDict([
+                (field_action[0], (field_name, field_action[1])) for field_name, field_action in self.model_fields.items()
+                if isinstance(field_action, tuple)
+            ])
+        return self._fk_field_map
+
+    @property
+    def fk_fields(self):
+        '''
+        Return list of field names (without _id suffix) being tracked.
+        '''
+        if not hasattr(self, '_fk_fields'):
+            self._fk_fields = self.fk_field_map.keys()
+        return self._fk_fields
 
     def get_dispatch_uid(self, signal_name):
         opts = self.model_class._meta
@@ -157,10 +173,28 @@ class ModelTracker(object):
             fields = [f for f in fields if f in update_fields]
         if created:
             serialized = serialize_instance(instance, using=using, fields=fields)
+            instance_data = collections.OrderedDict()
+            related_instances = []
             for field, value in serialized.items():
-                if field in self.sensitive_fields and value:  # FIXME: Indicate empty value or not?
-                    serialized[field] = trails_settings.SENSITIVE_TEXT
-            record_trail('add', instance=instance, instance_data=serialized)
+                if field in self.sensitive_fields:
+                    if value or not trails_settings.SENSITIVE_SHOW_EMPTY:
+                        instance_data[field] = trails_settings.SENSITIVE_TEXT
+                elif field in self.fk_fields:
+                    fk_id_field, fk_model = self.fk_field_map[field]
+                    instance_data[fk_id_field] = value
+                    if value is not None:
+                        related_instance = fk_model.objects.get(pk=value)
+                        if related_instance:
+                            related_instances.append(dict(
+                                rel=field,
+                                instance=related_instance,
+                            ))
+                else:
+                    instance_data[field] = value
+            if related_instances:
+                record_trail('add', instance=instance, instance_data=instance_data, related_instances=related_instances)
+            else:
+                record_trail('add', instance=instance, instance_data=instance_data)
         else:
             before = getattr(getattr(instance, '_trails_tls', None), 'pre_save', None) or {}
             after = serialize_instance(instance, using=using, fields=fields) or {}
@@ -173,11 +207,38 @@ class ModelTracker(object):
                     changes[field] = (None, after[field])
                 elif field in before:
                     changes[field] = (before[field], None)
+            related_instances = []
+            instance_data = collections.OrderedDict()
             for field, values in changes.items():
-                if field in self.sensitive_fields:  # FIXME: Indicate empty value or not?
-                    changes[field] = (values[0] or trails_settings.SENSITIVE_TEXT, values[1] or trails_settings.SENSITIVE_TEXT)
-            if changes:
-                record_trail('change', instance=instance, instance_data=changes)
+                if field in self.sensitive_fields:
+                    instance_data[field] = (
+                        trails_settings.SENSITIVE_TEXT if (values[0] or not trails_settings.SENSITIVE_SHOW_EMPTY) else values[0],
+                        trails_settings.SENSITIVE_TEXT if (values[1] or not trails_settings.SENSITIVE_SHOW_EMPTY) else values[1],
+                    )
+                elif field in self.fk_fields:
+                    fk_id_field, fk_model = self.fk_field_map[field]
+                    instance_data[fk_id_field] = values
+                    if values[0] is not None:
+                        related_instance_before = fk_model.objects.get(pk=values[0])
+                        if related_instance_before:
+                            related_instances.append(dict(
+                                rel='-{}'.format(field),
+                                instance=related_instance_before,
+                            ))
+                    if values[1] is not None:
+                        related_instance_after = fk_model.objects.get(pk=values[1])
+                        if related_instance_after:
+                            related_instances.append(dict(
+                                rel='+{}'.format(field),
+                                instance=related_instance_after,
+                            ))
+                else:
+                    instance_data[field] = values
+            if instance_data:
+                if related_instances:
+                    record_trail('change', instance=instance, instance_data=instance_data, related_instances=related_instances)
+                else:
+                    record_trail('change', instance=instance, instance_data=instance_data)
 
     def on_pre_delete(self, sender, **kwargs):
         log_trace('%r: on_pre_delete(%r, **%r)', self, sender, kwargs)
@@ -199,6 +260,9 @@ class ModelTracker(object):
 
 
 class ManyToManyTracker(object):
+    '''
+    Tracker for signals related to many to many field changes.
+    '''
 
     def __init__(self, m2m_model_class, related_model_fields):
         log_trace('ManyToManyTracker.__init__(%r)', m2m_model_class)
@@ -243,15 +307,17 @@ class ManyToManyTracker(object):
         for signal_name in ('pre_migrate', 'post_migrate'):
             signal = globals()[signal_name]
             dispatch_uid = self.get_dispatch_uid(signal_name)
-            signal.disconnect(
+            disconnected = signal.disconnect(
                 dispatch_uid=dispatch_uid,
             )
-            log_trace('%r: disconnect %s', self, dispatch_uid)
+            if disconnected:
+                log_trace('%r: disconnect %s', self, dispatch_uid)
         dispatch_uid = self.get_dispatch_uid('m2m_changed')
-        m2m_changed.disconnect(
+        disconnected = m2m_changed.disconnect(
             dispatch_uid=dispatch_uid,
         )
-        log_trace('%r: disconnect %s', self, dispatch_uid)
+        if disconnected:
+            log_trace('%r: disconnect %s', self, dispatch_uid)
 
     @property
     def migrating(self):
@@ -317,98 +383,12 @@ class ManyToManyTracker(object):
         log_trace('%r: on_m2m_changed(%r, **%r)', self, sender, kwargs)
         if self.migrating and not trails_settings.TRACK_MIGRATIONS:
             return
-
         method = getattr(self, 'on_m2m_{}'.format(kwargs['action']))
         method(sender, kwargs['instance'], kwargs['model'], kwargs['pk_set'])
-        return
-
-        if action in {'pre_add', 'pre_remove'}:
-            return
-        
-        instance = kwargs['instance']
-        model = kwargs['model']
-        pk_set = set(kwargs['pk_set'] or [])
-        reverse = kwargs['reverse']
-        using = kwargs['using']
-
-
-        primary_instances = [instance]
-        if action == 'pre_clear':
-            if related_model == self.model_class:
-                related_field = getattr(related_model, field_name)
-                if not related_field.reverse:
-                    reverse_field_name = related_field.rel.get_accessor_name()
-                else:
-                    reverse_field_name = getattr(related_field.field, 'attname', related_field.field.name)
-                related_pks = list(getattr(instance, reverse_field_name).values_list('pk', flat=True))
-            else:
-                related_pks = list(getattr(instance, field_name).values_list('pk', flat=True))
-        elif action == 'post_clear':
-            related_pks = []  # FIXME: Load from those saved pre_clear
-
-        related_instances = related_model.objects.filter(pk__in=related_pks)
-
-        # If signaled from the reverse side of the relation, swap primary and
-        # related instances.
-        if related_model == self.model_class:
-            #print('backwards!!')
-            primary_instances, related_instances = related_instances, primary_instances
-
-        for pi in primary_instances:
-            
-            related_pks = [ri.pk for ri in related_instances]
-            if not related_pks:
-                continue
-                
-            related = [dict(rel=field_name, instance=ri) for ri in related_instances]
-            if action == 'post_add':
-                record_trail('associate', instance=pi, related_instances=related)
-            elif action == 'post_remove':
-                record_trail('disassociate', instance=pi, related_instances=related)
-
-            
-            continue
-            for ri in related_instances:
-                if action == 'post_add':
-                    print('==== M2M:', pi, '.', field_name, '+=', ri)
-                    record_trail('associate', instance=pi, related_instance=ri, data={field_name: ri.pk})
-                elif action == 'post_remove':
-                    print('==== M2M:', pi, '.', field_name, '-=', ri)
-                    record_trail('disassociate', instance=pi, related_instance=ri, data={field_name: ri.pk})
-                elif action == 'pre_clear':
-                    print('==== M2M:', pi, '.', field_name, 'x=', ri)
-                    # FIXME: Save temporarily.
-                elif action == 'post_clear':
-                    print('==== M2M:', pi, '.', field_name, 'X=', ri)
-
-
-        #field_name = None
-        #for m2m_field_name, m2m_model in self.m2m_fields.items():
-        #    if m2m_model._meta.model == sender:
-        #        field_name = m2m_field_name
-        #        break
-        #if not field_name:
-        #    return
-
-        #print('m2m:', instance, '.', field_name, '->', related_model, 'rev?', reverse, 'other?', related_model == self.model_class)
-
-        return
-        if action in ('pre_clear', 'pre_add', 'pre_remove'):
-            key = self.get_cache_key(sender, action.replace('pre_', ''))
-            value = set(sender.objects.values_list('pk', flat=True))
-            self.cache[key] = value
-        elif action in ('post_clear', 'post_add', 'post_remove'):
-            key = self.get_cache_key(sender, action.replace('post_', ''))
-            before = self.cache.pop(key, set())
-            after = set(sender.objects.values_list('pk', flat=True))
-            #for item in before - after:
-            #    print item, 'removed from', field_name, 'for', instance
-            #for item in after - before:
-            #    print item, 'added to', field_name, 'for', instance
 
 
 class UserTracker(object):
-    
+
     def __init__(self, track_login=True, track_logout=True,
                  track_failed_login=True):
         log_trace('UserTracker.__init__(track_login=%r, track_logout=%r, track_failed_login=%r)',

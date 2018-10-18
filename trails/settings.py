@@ -14,6 +14,7 @@ DEFAULT_SETTINGS = {
     'INCLUDE_MODELS': (
         '*',
     ),
+
     # List of strings specifying app_label or app_label.ModelName to exclude.
     # Shell-style wildcards are supported.
     'EXCLUDE_MODELS': (
@@ -39,6 +40,9 @@ DEFAULT_SETTINGS = {
 
     # Replacement text to use instead of the actual value for sensitive fields.
     'SENSITIVE_TEXT': '(hidden)',
+
+    # Indicate when sensitive fields contain empty values?
+    'SENSITIVE_SHOW_EMPTY': True,
 
     # TBD: Track changes to models as part of changes related to other models?
     'LINKED_MODELS': {
@@ -108,6 +112,7 @@ DEFAULT_SETTINGS = {
     'PIPELINE': (
         'trails.pipeline.assert_action',
         'trails.pipeline.add_request',
+        'trails.pipeline.add_request_uuid',
         'trails.pipeline.add_session',
         'trails.pipeline.add_user',
         'trails.pipeline.check_no_user',
@@ -199,9 +204,10 @@ trails_settings = TrailsSettings()
 
 
 def reload_trails_settings(sender, **kwargs):
-    print('setting changed', sender, kwargs)
-    setting = kwargs['setting']
+    from .utils import log_trace
+    log_trace('setting changed: %r, %r', sender, kwargs)
     if kwargs['setting'] == 'TRAILS':
         trails_settings.reload()
+
 
 setting_changed.connect(reload_trails_settings)
